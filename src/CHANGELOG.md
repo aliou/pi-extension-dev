@@ -1,5 +1,11 @@
 # @aliou/pi-extension-dev
 
+## 0.1.1
+
+### Patch Changes
+
+- dccbf2d: Add preview video to package.json for the pi package browser.
+
 ## 0.1.0
 
 ### Minor Changes
