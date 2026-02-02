@@ -18,6 +18,12 @@
     "extensions": [
       "./index.ts"
     ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ],
     "video": "https://assets.aliou.me/pi-extensions/2026-02-02-pi-extension-dev-demo.mp4"
   },
   "publishConfig": {
@@ -27,6 +33,8 @@
     "*.ts",
     "tools",
     "commands",
+    "skills",
+    "prompts",
     "README.md"
   ],
   "dependencies": {
