@@ -8,11 +8,13 @@ Tools and commands for developing and updating Pi extensions.
 pi install npm:@aliou/pi-extension-dev
 ```
 
-Or from git:
+## Commands
 
-```bash
-pi install git:github.com/aliou/pi-extensions --extension extensions/extension-dev/index.ts
-```
+### `/extensions:update [VERSION]`
+
+Update Pi extensions to a target version. Without an argument, checks npm for the latest version and lets you choose between latest and installed. With a version argument, targets that version directly.
+
+Runs a guided workflow: detects the package manager, compares versions, reads changelogs and docs, analyzes source files for breaking changes, presents an update plan, and applies changes after confirmation.
 
 ## Tools
 
@@ -33,14 +35,6 @@ Lists all Pi documentation files from the Pi installation: `README.md`, individu
 ### `pi_changelog`
 
 Parses the Pi changelog and returns entries for a specific version (or the latest). When the requested version is newer than the installed Pi, fetches the changelog from GitHub.
-
-## Commands
-
-### `/extensions:update [VERSION]`
-
-Update Pi extensions to a target version. Without an argument, checks npm for the latest version and lets you choose between latest and installed. With a version argument, targets that version directly.
-
-Runs a guided workflow: detects the package manager, compares versions, reads changelogs and docs, analyzes source files for breaking changes, presents an update plan, and applies changes after confirmation.
 
 ## Compatibility
 
