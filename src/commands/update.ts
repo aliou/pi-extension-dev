@@ -49,8 +49,9 @@ If there's a version mismatch:
 Scan all source files that import from Pi packages:
 1. Find all \`.ts\` and \`.tsx\` files that import from \`@mariozechner/pi-*\`
 2. For each file, identify API usage that needs updating based on changelog/docs
-3. Note deprecated patterns or new recommended approaches
-4. Look for custom utility functions that duplicate functionality now available in the Pi SDK -- if the SDK provides an equivalent, flag it for replacement
+3. Check overridden tools or tool wrappers for delegated \`tool.execute(...)\` calls; update forwarded parameter order and optional args
+4. Note deprecated patterns or new recommended approaches
+5. Look for custom utility functions that duplicate functionality now available in the Pi SDK -- if the SDK provides an equivalent, flag it for replacement
 
 ### 5. Create Update Plan
 
