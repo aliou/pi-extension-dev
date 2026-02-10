@@ -1,3 +1,4 @@
+import { ToolCallHeader } from "@aliou/pi-utils-ui";
 import type {
   AgentToolResult,
   ExtensionAPI,
@@ -46,8 +47,8 @@ export function setupVersionTool(pi: ExtensionAPI) {
       };
     },
 
-    renderCall(_args: VersionParamsType, theme: Theme): Text {
-      return new Text(theme.fg("toolTitle", theme.bold("pi_version")), 0, 0);
+    renderCall(_args: VersionParamsType, theme: Theme) {
+      return new ToolCallHeader({ toolName: "Pi Version" }, theme);
     },
 
     renderResult(

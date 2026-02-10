@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { ToolBody, ToolCallHeader, ToolFooter } from "@aliou/pi-utils-ui";
 import type {
   AgentToolResult,
   ExtensionAPI,
@@ -143,15 +144,15 @@ export function setupDocsTool(pi: ExtensionAPI) {
       }
     },
 
-    renderCall(_args: DocsParamsType, theme: Theme): Text {
-      return new Text(theme.fg("toolTitle", theme.bold("pi_docs")), 0, 0);
+    renderCall(_args: DocsParamsType, theme: Theme) {
+      return new ToolCallHeader({ toolName: "Pi Docs" }, theme);
     },
 
     renderResult(
       result: AgentToolResult<DocsDetails>,
       options: ToolRenderResultOptions,
       theme: Theme,
-    ): Text {
+    ) {
       const { details } = result;
 
       if (!details) {
@@ -163,47 +164,77 @@ export function setupDocsTool(pi: ExtensionAPI) {
         );
       }
 
+      const fields: Array<
+        { label: string; value: string; showCollapsed?: boolean } | Text
+      > = [];
+
       if (!details.success) {
-        return new Text(theme.fg("error", `✗ ${details.message}`), 0, 0);
-      }
-
-      if (!details.docFiles || details.docFiles.length === 0) {
-        return new Text(theme.fg("warning", "No docs found"), 0, 0);
-      }
-
-      const { expanded } = options;
-      const lines: string[] = [];
-
-      if (expanded) {
-        // Expanded: show relative paths
-        lines.push(
-          theme.fg("accent", `${details.docFiles.length} markdown files:`),
-        );
-        lines.push("");
-        for (const rel of details.docFiles) {
-          lines.push(theme.fg("dim", `  ${rel}`));
-        }
+        fields.push({
+          label: "Error",
+          value: theme.fg("error", details.message),
+          showCollapsed: true,
+        });
+      } else if (!details.docFiles || details.docFiles.length === 0) {
+        fields.push({
+          label: "Result",
+          value: theme.fg("warning", "No docs found"),
+          showCollapsed: true,
+        });
       } else {
-        // Collapsed: count + grid of filenames
-        lines.push(
-          theme.fg("accent", `${details.docFiles.length} markdown files`) +
-            ` (${keyHint("expandTools", "to expand")})`,
-        );
-        lines.push("");
-        const filenames = details.docFiles.map((p) => path.basename(p));
-        const maxLen = Math.max(...filenames.map((f) => f.length));
-        const colWidth = maxLen + 2;
-        const cols = Math.max(1, Math.floor(80 / colWidth));
-        for (let i = 0; i < filenames.length; i += cols) {
-          const row = filenames
-            .slice(i, i + cols)
-            .map((f) => f.padEnd(colWidth))
-            .join("");
-          lines.push(theme.fg("dim", row));
+        const lines: string[] = [];
+
+        if (options.expanded) {
+          lines.push(
+            theme.fg("accent", `${details.docFiles.length} markdown files:`),
+            "",
+          );
+          for (const rel of details.docFiles) {
+            lines.push(theme.fg("dim", `  ${rel}`));
+          }
+        } else {
+          lines.push(
+            theme.fg("accent", `${details.docFiles.length} markdown files`) +
+              ` (${keyHint("expandTools", "to expand")})`,
+            "",
+          );
+
+          const filenames = details.docFiles.map((file) => path.basename(file));
+          const maxLen = Math.max(...filenames.map((file) => file.length));
+          const colWidth = maxLen + 2;
+          const cols = Math.max(1, Math.floor(80 / colWidth));
+          for (let i = 0; i < filenames.length; i += cols) {
+            const row = filenames
+              .slice(i, i + cols)
+              .map((file) => file.padEnd(colWidth))
+              .join("");
+            lines.push(theme.fg("dim", row));
+          }
         }
+
+        fields.push(new Text(lines.join("\n"), 0, 0));
       }
 
-      return new Text(lines.join("\n"), 0, 0);
+      return new ToolBody(
+        {
+          fields,
+          footer: new ToolFooter(theme, {
+            items: [
+              {
+                label: "status",
+                value: details.success ? "ok" : "error",
+                tone: details.success ? "success" : "error",
+              },
+              {
+                label: "docs",
+                value: String(details.docFiles?.length ?? 0),
+                tone: "accent",
+              },
+            ],
+          }),
+        },
+        options,
+        theme,
+      );
     },
   });
 }

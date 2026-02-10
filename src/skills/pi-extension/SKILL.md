@@ -53,7 +53,7 @@ import { truncateHead, highlightCode, getLanguageFromPath, DynamicBorder, Border
 | File | Content |
 |---|---|
 | `references/structure.md` | Project layout, package.json, tsconfig, entry point, API key pattern, imports |
-| `references/tools.md` | Tool registration, execute signature, parameters, streaming, rendering, naming |
+| `references/tools.md` | Tool registration, execute signature, parameters, streaming, rendering, naming, renderCall/renderResult UI guidelines |
 | `references/hooks.md` | Events, blocking/cancelling, input transformation, system prompt modification, bash spawn hooks (command rewriting) |
 | `references/commands.md` | Command registration, three-tier pattern, component extraction |
 | `references/components.md` | TUI components (pi-tui + pi-coding-agent), custom(), theme styling, keyboard handling |
@@ -88,9 +88,12 @@ When implementing, look at these existing extensions for patterns:
 4. **Mode awareness**: Every `ctx.ui.custom()` call needs an RPC fallback (use `select`/`confirm`/`notify` -- they work in RPC). Every `tool_call` hook with dialogs needs a `ctx.hasUI` check.
 5. **API key gating**: Check before registering tools that require the key. Providers handle missing keys internally via their `models()` function.
 6. **Tool naming**: Prefix with API name for third-party integrations (`linkup_web_search`). No prefix for internal tools (`get_current_time`).
-7. **peerDependencies**: Use `>=CURRENT_VERSION` range, not `*`.
-8. **Check existing components**: Before creating a new TUI component, check if `pi-tui` or `pi-coding-agent` already exports one that fits.
-9. **Never use `homedir()` for pi paths**: Use the SDK helpers from `@mariozechner/pi-coding-agent` instead. They respect the `PI_CODING_AGENT_DIR` env var which is used for testing and custom setups. Key functions: `getAgentDir()`, `getSettingsPath()`, `getSessionsDir()`, `getPromptsDir()`, `getToolsDir()`, `getCustomThemesDir()`, `getModelsPath()`, `getAuthPath()`, `getBinDir()`, `getDebugLogPath()`. All exported from the main package entry point.
+7. **Tool call header pattern**: Keep `renderCall` consistent: first line `[Tool Name]: [Action] [Main arg] [Option args]`, extra lines for long args. Use display names, not raw tool IDs.
+8. **Long args placement**: Put long prompt/task/question/context strings on following lines. Keep first line scannable.
+9. **Footer spacing**: If a tool result has a footer, keep one blank line before it for readability.
+10. **peerDependencies**: Use `>=CURRENT_VERSION` range, not `*`.
+11. **Check existing components**: Before creating a new TUI component, check if `pi-tui` or `pi-coding-agent` already exports one that fits.
+12. **Never use `homedir()` for pi paths**: Use the SDK helpers from `@mariozechner/pi-coding-agent` instead. They respect the `PI_CODING_AGENT_DIR` env var which is used for testing and custom setups. Key functions: `getAgentDir()`, `getSettingsPath()`, `getSessionsDir()`, `getPromptsDir()`, `getToolsDir()`, `getCustomThemesDir()`, `getModelsPath()`, `getAuthPath()`, `getBinDir()`, `getDebugLogPath()`. All exported from the main package entry point.
 
 ## Checklist
 
@@ -100,6 +103,9 @@ Before considering an extension complete:
 - [ ] All tools have correct execute parameter order.
 - [ ] All `onUpdate` calls use optional chaining.
 - [ ] No `.js` file extensions in imports.
+- [ ] `renderCall` uses a consistent first-line pattern (tool, action if any, main arg, options).
+- [ ] Long call arguments are moved to follow-up lines, not crammed into first line.
+- [ ] If result includes a footer, there is a blank line above it.
 - [ ] `ctx.ui.custom()` calls have RPC fallback (undefined check).
 - [ ] `tool_call` hooks check `ctx.hasUI` before dialog methods.
 - [ ] Fire-and-forget methods (notify, setStatus, etc.) are used without hasUI guards.

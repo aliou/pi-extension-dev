@@ -179,6 +179,32 @@ const myTool: ToolDefinition = {
 
 Both return a string or undefined (falls back to default rendering).
 
+## Tool UI Rendering Guidelines
+
+When customizing tool rendering, keep call/result UI predictable and scannable.
+
+### `renderCall` format
+
+Use this line model:
+
+- First line: `[Tool Name]: [Action] [Main arg] [Option args]`
+- Additional lines: long args only
+
+Guidelines:
+- Tool name should be a human display label, not a raw internal identifier.
+- Show `action` only when it adds meaning (multi-action tools like process managers).
+- Main arg should be the primary thing user cares about (query, session id, target id/name).
+- Option args should be compact key-value pairs (`limit=10`, `cwd=/path`).
+- Long text (prompt/task/question/context/instructions) goes to additional lines.
+- Prefer wrapping to preserve full meaning over aggressive truncation.
+- For tools without actions, omit colon suffix after tool name if that reads better in your UI system.
+
+### `renderResult` layout
+
+- Keep body content focused on state and key output.
+- If you render a footer (stats, backend, counts), keep one blank line above it.
+- Keep footer concise and stable across states.
+
 ## Naming Conventions
 
 For extensions wrapping a third-party API, prefix tool names with the API name to avoid conflicts:

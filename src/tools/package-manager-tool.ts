@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { ToolCallHeader } from "@aliou/pi-utils-ui";
 import type {
   AgentToolResult,
   ExtensionAPI,
@@ -178,12 +179,8 @@ export function setupPackageManagerTool(pi: ExtensionAPI) {
       }
     },
 
-    renderCall(_args: ParamsType, theme: Theme): Text {
-      return new Text(
-        theme.fg("toolTitle", theme.bold("detect_package_manager")),
-        0,
-        0,
-      );
+    renderCall(_args: ParamsType, theme: Theme) {
+      return new ToolCallHeader({ toolName: "Detect Package Manager" }, theme);
     },
 
     renderResult(

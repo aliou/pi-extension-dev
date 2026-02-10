@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { ToolBody, ToolCallHeader, ToolFooter } from "@aliou/pi-utils-ui";
 import type {
   AgentToolResult,
   ExtensionAPI,
@@ -351,19 +352,21 @@ export function setupChangelogTool(pi: ExtensionAPI) {
       }
     },
 
-    renderCall(args: ChangelogParamsType, theme: Theme): Text {
-      let text = theme.fg("toolTitle", theme.bold("pi_changelog"));
-      if (args.version) {
-        text += ` ${theme.fg("muted", `v${args.version}`)}`;
-      }
-      return new Text(text, 0, 0);
+    renderCall(args: ChangelogParamsType, theme: Theme) {
+      return new ToolCallHeader(
+        {
+          toolName: "Pi Changelog",
+          mainArg: args.version ? `v${args.version}` : "latest",
+        },
+        theme,
+      );
     },
 
     renderResult(
       result: AgentToolResult<ChangelogDetails>,
       options: ToolRenderResultOptions,
       theme: Theme,
-    ): Text {
+    ) {
       const { details } = result;
 
       if (!details) {
@@ -375,38 +378,70 @@ export function setupChangelogTool(pi: ExtensionAPI) {
         );
       }
 
+      const fields: Array<
+        { label: string; value: string; showCollapsed?: boolean } | Text
+      > = [];
+
       if (!details.success) {
-        return new Text(theme.fg("error", `✗ ${details.message}`), 0, 0);
+        fields.push({
+          label: "Error",
+          value: theme.fg("error", details.message),
+          showCollapsed: true,
+        });
+      } else if (!details.changelog) {
+        fields.push({
+          label: "Result",
+          value: theme.fg("success", details.message),
+          showCollapsed: true,
+        });
+      } else {
+        const lines: string[] = [];
+        const sourceTag =
+          details.source === "github" ? theme.fg("muted", " (github)") : "";
+        lines.push(theme.fg("success", details.message) + sourceTag, "");
+        lines.push(
+          theme.fg("accent", `Version: ${details.changelog.version}`),
+          "",
+        );
+        lines.push(
+          ...renderChangelogContent(
+            details.changelog.content,
+            theme,
+            options.expanded ? undefined : COLLAPSED_LINES,
+          ),
+        );
+
+        if (!options.expanded) {
+          lines.push(
+            "",
+            theme.fg("muted", `${keyHint("expandTools", "to expand")}`),
+          );
+        }
+
+        fields.push(new Text(lines.join("\n"), 0, 0));
       }
 
-      if (!details.changelog) {
-        return new Text(theme.fg("success", details.message), 0, 0);
-      }
-
-      const { expanded } = options;
-      const lines: string[] = [];
-
-      const sourceTag =
-        details.source === "github" ? theme.fg("muted", " (github)") : "";
-      lines.push(theme.fg("success", details.message) + sourceTag);
-      lines.push("");
-      lines.push(theme.fg("accent", `Version: ${details.changelog.version}`));
-      lines.push("");
-
-      lines.push(
-        ...renderChangelogContent(
-          details.changelog.content,
-          theme,
-          expanded ? undefined : COLLAPSED_LINES,
-        ),
+      return new ToolBody(
+        {
+          fields,
+          footer: new ToolFooter(theme, {
+            items: [
+              {
+                label: "status",
+                value: details.success ? "ok" : "error",
+                tone: details.success ? "success" : "error",
+              },
+              {
+                label: "source",
+                value: details.source ?? "local",
+                tone: "accent",
+              },
+            ],
+          }),
+        },
+        options,
+        theme,
       );
-
-      if (!expanded) {
-        lines.push("");
-        lines.push(theme.fg("muted", `${keyHint("expandTools", "to expand")}`));
-      }
-
-      return new Text(lines.join("\n"), 0, 0);
     },
   });
 
@@ -479,19 +514,15 @@ export function setupChangelogTool(pi: ExtensionAPI) {
       }
     },
 
-    renderCall(_args: ChangelogVersionsParamsType, theme: Theme): Text {
-      return new Text(
-        theme.fg("toolTitle", theme.bold("pi_changelog_versions")),
-        0,
-        0,
-      );
+    renderCall(_args: ChangelogVersionsParamsType, theme: Theme) {
+      return new ToolCallHeader({ toolName: "Pi Changelog Versions" }, theme);
     },
 
     renderResult(
       result: AgentToolResult<ChangelogVersionsDetails>,
-      _options: ToolRenderResultOptions,
+      options: ToolRenderResultOptions,
       theme: Theme,
-    ): Text {
+    ) {
       const { details } = result;
 
       if (!details) {
@@ -503,32 +534,63 @@ export function setupChangelogTool(pi: ExtensionAPI) {
         );
       }
 
+      const fields: Array<
+        { label: string; value: string; showCollapsed?: boolean } | Text
+      > = [];
+
       if (!details.success) {
-        return new Text(theme.fg("error", `✗ ${details.message}`), 0, 0);
+        fields.push({
+          label: "Error",
+          value: theme.fg("error", details.message),
+          showCollapsed: true,
+        });
+      } else if (!details.versions || details.versions.length === 0) {
+        fields.push({
+          label: "Result",
+          value: theme.fg("warning", "No versions found"),
+          showCollapsed: true,
+        });
+      } else {
+        const lines: string[] = [
+          theme.fg("accent", `${details.versions.length} versions available:`),
+          "",
+        ];
+        const cols = 6;
+        const maxLen = Math.max(
+          ...details.versions.map((version) => version.length),
+        );
+        const colWidth = maxLen + 2;
+        for (let i = 0; i < details.versions.length; i += cols) {
+          const row = details.versions
+            .slice(i, i + cols)
+            .map((version) => version.padEnd(colWidth))
+            .join("");
+          lines.push(theme.fg("dim", row));
+        }
+        fields.push(new Text(lines.join("\n"), 0, 0));
       }
 
-      if (!details.versions || details.versions.length === 0) {
-        return new Text(theme.fg("warning", "No versions found"), 0, 0);
-      }
-
-      const lines: string[] = [];
-      lines.push(
-        theme.fg("accent", `${details.versions.length} versions available:`),
+      return new ToolBody(
+        {
+          fields,
+          footer: new ToolFooter(theme, {
+            items: [
+              {
+                label: "status",
+                value: details.success ? "ok" : "error",
+                tone: details.success ? "success" : "error",
+              },
+              {
+                label: "versions",
+                value: String(details.versions?.length ?? 0),
+                tone: "accent",
+              },
+            ],
+          }),
+        },
+        options,
+        theme,
       );
-      lines.push("");
-
-      const cols = 6;
-      const maxLen = Math.max(...details.versions.map((v) => v.length));
-      const colWidth = maxLen + 2;
-      for (let i = 0; i < details.versions.length; i += cols) {
-        const row = details.versions
-          .slice(i, i + cols)
-          .map((v) => v.padEnd(colWidth))
-          .join("");
-        lines.push(theme.fg("dim", row));
-      }
-
-      return new Text(lines.join("\n"), 0, 0);
     },
   });
 }

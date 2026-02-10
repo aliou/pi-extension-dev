@@ -38,6 +38,7 @@
     "README.md"
   ],
   "dependencies": {
+    "@aliou/pi-utils-ui": "workspace:^",
     "@sinclair/typebox": "^0.34.41"
   },
   "peerDependencies": {
