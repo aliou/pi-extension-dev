@@ -226,7 +226,7 @@ Use snake_case for all tool names.
 
 ## Abort Signal
 
-The `signal` parameter lets you cancel long-running operations when the user interrupts.
+The `signal` parameter lets you cancel long-running operations when the user interrupts (e.g. pressing Escape). If the tool does not forward the signal, the underlying operation keeps running even after the user cancels, wasting resources and API credits.
 
 ```typescript
 execute: async (toolCallId, params, signal, onUpdate, ctx) => {
@@ -236,7 +236,28 @@ execute: async (toolCallId, params, signal, onUpdate, ctx) => {
 },
 ```
 
-Pass `signal` to any async operation that supports it (fetch, child processes, etc.).
+Pass `signal` to every async operation that supports it: `fetch()` calls, child processes, SDK clients, etc.
+
+When wrapping an API client, thread the signal through the entire call chain. The client methods should accept an optional `signal` and forward it to the underlying `fetch()`:
+
+```typescript
+// In the tool:
+async execute(_toolCallId, params, signal, onUpdate, ctx) {
+  const result = await client.search({ query: params.query, signal });
+  // ...
+}
+
+// In the client:
+async search(params: { query: string; signal?: AbortSignal }) {
+  return this.request("/search", { method: "POST", body: ... }, params.signal);
+}
+
+private async request<T>(endpoint: string, options: RequestInit = {}, signal?: AbortSignal) {
+  return fetch(`${BASE_URL}${endpoint}`, { ...options, signal, headers: { ... } });
+}
+```
+
+Do not prefix signal with underscore (`_signal`) unless the tool genuinely cannot use it. A dangling `_signal` is a sign of a missing cancellation path.
 
 ## Output Truncation
 

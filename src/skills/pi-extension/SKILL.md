@@ -93,7 +93,8 @@ When implementing, look at these existing extensions for patterns:
 9. **Footer spacing**: If a tool result has a footer, keep one blank line before it for readability.
 10. **peerDependencies**: Use `>=CURRENT_VERSION` range, not `*`.
 11. **Check existing components**: Before creating a new TUI component, check if `pi-tui` or `pi-coding-agent` already exports one that fits.
-12. **Never use `homedir()` for pi paths**: Use the SDK helpers from `@mariozechner/pi-coding-agent` instead. They respect the `PI_CODING_AGENT_DIR` env var which is used for testing and custom setups. Key functions: `getAgentDir()`, `getSettingsPath()`, `getSessionsDir()`, `getPromptsDir()`, `getToolsDir()`, `getCustomThemesDir()`, `getModelsPath()`, `getAuthPath()`, `getBinDir()`, `getDebugLogPath()`. All exported from the main package entry point.
+12. **Forward abort signals**: Always pass `signal` through to `fetch()`, child processes, and API client methods. A tool that ignores its signal prevents cancellation from reaching the underlying operation. Never prefix with `_signal` unless the tool truly has no async work to cancel.
+13. **Never use `homedir()` for pi paths**: Use the SDK helpers from `@mariozechner/pi-coding-agent` instead. They respect the `PI_CODING_AGENT_DIR` env var which is used for testing and custom setups. Key functions: `getAgentDir()`, `getSettingsPath()`, `getSessionsDir()`, `getPromptsDir()`, `getToolsDir()`, `getCustomThemesDir()`, `getModelsPath()`, `getAuthPath()`, `getBinDir()`, `getDebugLogPath()`. All exported from the main package entry point.
 
 ## Checklist
 
@@ -109,6 +110,7 @@ Before considering an extension complete:
 - [ ] `ctx.ui.custom()` calls have RPC fallback (undefined check).
 - [ ] `tool_call` hooks check `ctx.hasUI` before dialog methods.
 - [ ] Fire-and-forget methods (notify, setStatus, etc.) are used without hasUI guards.
+- [ ] `signal` is forwarded to all async operations (fetch, child processes, API clients). No unused `_signal`.
 - [ ] Missing API keys produce a notification, not a crash.
 - [ ] `pnpm typecheck` passes.
 - [ ] No `homedir()` calls for pi paths -- uses SDK helpers (`getAgentDir()`, etc.).
