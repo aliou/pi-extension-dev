@@ -1,0 +1,47 @@
+{
+  "name": "@aliou/pi-extension-dev",
+  "version": "0.4.1",
+  "type": "module",
+  "private": false,
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pi",
+    "extension-dev",
+    "meta"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aliou/pi-extensions"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ],
+    "video": "https://assets.aliou.me/pi-extensions/2026-02-02-pi-extension-dev-demo.mp4"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "*.ts",
+    "tools",
+    "commands",
+    "skills",
+    "prompts",
+    "README.md"
+  ],
+  "dependencies": {
+    "@aliou/pi-utils-ui": "workspace:^",
+    "@sinclair/typebox": "^0.34.41"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": ">=0.51.0"
+  }
+}
