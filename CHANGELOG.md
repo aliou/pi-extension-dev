@@ -1,5 +1,11 @@
 # @aliou/pi-extension-dev
 
+## 0.4.3
+
+### Patch Changes
+
+- 828a195: Fix: include real source files
+
 ## 0.4.2
 
 ### Patch Changes
