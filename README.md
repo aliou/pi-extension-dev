@@ -19,6 +19,12 @@ https://github.com/user-attachments/assets/44a96009-0653-4803-8590-d5a8a5131f4c
 pi install npm:@aliou/pi-extension-dev
 ```
 
+Or from git:
+
+```bash
+pi install git:github.com/aliou/pi-extension-dev
+```
+
 ## Commands
 
 ### `/extensions:update [VERSION]`
