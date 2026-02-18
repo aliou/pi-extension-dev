@@ -1,5 +1,11 @@
 # @aliou/pi-extension-dev
 
+## 0.4.2
+
+### Patch Changes
+
+- 611c23a: Move to standalone repository
+
 ## 0.4.1
 
 ### Patch Changes
