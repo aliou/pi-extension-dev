@@ -1,5 +1,11 @@
 # @aliou/pi-extension-dev
 
+## 0.4.4
+
+### Patch Changes
+
+- da8ec83: mark pi SDK peer deps as optional to prevent koffi OOM in Gondolin VMs
+
 ## 0.4.3
 
 ### Patch Changes
