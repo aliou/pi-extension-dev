@@ -62,7 +62,7 @@ import { truncateHead, highlightCode, getLanguageFromPath, DynamicBorder, Border
 | `references/messages.md` | sendMessage, registerMessageRenderer, notify, when to use each |
 | `references/state.md` | appendEntry, state reconstruction, appendEntry vs sendMessage |
 | `references/additional-apis.md` | Shortcuts, flags, exec, sendUserMessage, session name, labels, model control, EventBus, theme, UI customization |
-| `references/publish.md` | npm publishing, changesets, versioning, pre-publish checklist |
+| `references/publish.md` | npm publishing, changesets (manual file format + CI automation), GitHub Actions publish workflow, first-time setup, NPM_TOKEN, pre-publish checklist |
 | `references/testing.md` | Local development, type checking, manual testing, debugging |
 | `references/documentation.md` | README template, what to document, changelog |
 
