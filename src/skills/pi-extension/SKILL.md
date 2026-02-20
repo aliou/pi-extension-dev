@@ -91,7 +91,7 @@ When implementing, look at these existing extensions for patterns:
 7. **Tool call header pattern**: Keep `renderCall` consistent: first line `[Tool Name]: [Action] [Main arg] [Option args]`, extra lines for long args. Use display names, not raw tool IDs.
 8. **Long args placement**: Put long prompt/task/question/context strings on following lines. Keep first line scannable.
 9. **Footer spacing**: If a tool result has a footer, keep one blank line before it for readability.
-10. **peerDependencies**: Use `>=CURRENT_VERSION` range, not `*`.
+10. **peerDependencies**: Any package Pi already ships (`@mariozechner/pi-coding-agent`, `@mariozechner/pi-tui`, `@mariozechner/pi-ai`) must be listed in `peerDependencies` with `optional: true` in `peerDependenciesMeta` if imported at runtime. Without `optional: true`, npm 7+ auto-installs peers, adding hundreds of packages on every install even though Pi already provides them. Keep them in `devDependencies` too for local type checking — `pnpm install` installs peers, so development is unaffected. Use `>=CURRENT_VERSION` range, not `*`.
 11. **Check existing components**: Before creating a new TUI component, check if `pi-tui` or `pi-coding-agent` already exports one that fits.
 12. **Forward abort signals**: Always pass `signal` through to `fetch()`, child processes, and API client methods. A tool that ignores its signal prevents cancellation from reaching the underlying operation. Never prefix with `_signal` unless the tool truly has no async work to cancel.
 13. **Never use `homedir()` for pi paths**: Use the SDK helpers from `@mariozechner/pi-coding-agent` instead. They respect the `PI_CODING_AGENT_DIR` env var which is used for testing and custom setups. Key functions: `getAgentDir()`, `getSettingsPath()`, `getSessionsDir()`, `getPromptsDir()`, `getToolsDir()`, `getCustomThemesDir()`, `getModelsPath()`, `getAuthPath()`, `getBinDir()`, `getDebugLogPath()`. All exported from the main package entry point.
@@ -116,3 +116,5 @@ Before considering an extension complete:
 - [ ] `pnpm typecheck` passes.
 - [ ] No `homedir()` calls for pi paths -- uses SDK helpers (`getAgentDir()`, etc.).
 - [ ] README documents tools, commands, env vars.
+- [ ] `@mariozechner/pi-tui` (and any other Pi-provided package) is in `peerDependencies` with `optional: true` if imported at runtime, not just `devDependencies`.
+- [ ] `prepare` script is `"[ -d .git ] && husky || true"`, not bare `"husky"`.

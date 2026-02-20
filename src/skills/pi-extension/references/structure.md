@@ -56,12 +56,20 @@ Not every extension needs every directory. A simple extension with one tool migh
     "video": "https://example.com/demo.mp4"
   },
   "peerDependencies": {
-    "@mariozechner/pi-coding-agent": ">=CURRENT_VERSION"
+    "@mariozechner/pi-coding-agent": ">=CURRENT_VERSION",
+    "@mariozechner/pi-tui": ">=CURRENT_VERSION"
+  },
+  "peerDependenciesMeta": {
+    "@mariozechner/pi-coding-agent": { "optional": true },
+    "@mariozechner/pi-tui": { "optional": true }
   },
   "devDependencies": {
     "@mariozechner/pi-coding-agent": "CURRENT_VERSION",
     "@mariozechner/pi-tui": "CURRENT_VERSION",
     "typescript": "^5.8.0"
+  },
+  "scripts": {
+    "prepare": "[ -d .git ] && husky || true"
   },
   "pnpm": {
     "overrides": {
@@ -86,9 +94,13 @@ Replace `CURRENT_VERSION` with the actual installed version of pi (e.g., `0.51.2
 | `prompts` | Array of directories containing prompt files. Optional. |
 | `video` | URL to an `.mp4` demo video. Displayed on the pi website package listing. Not used by pi itself. Optional. |
 
-**`peerDependencies`**: Declares the minimum pi version required. Use `>=` with the current version when creating. The range can be relaxed later when verifying compatibility with older versions.
+**`peerDependencies`**: Declares the minimum pi version required. Both `@mariozechner/pi-coding-agent` and `@mariozechner/pi-tui` must be listed here as optional peers if your extension imports from either at runtime. Pi already ships these packages, so marking them as optional peers prevents npm from installing duplicate copies when a user installs your extension. Use `>=` with the current version when creating.
 
-**`devDependencies`**: Same packages at exact versions for type checking during development.
+**`peerDependenciesMeta`**: Marks peer dependencies as optional. Without `optional: true`, npm 7+ auto-installs peers that are not already present, which defeats the purpose — Pi already provides them.
+
+**`devDependencies`**: Same packages at exact pinned versions for local type checking. `pnpm install` in your repo installs peerDependencies automatically, so local development is unaffected.
+
+**`scripts.prepare`**: The `[ -d .git ] && husky || true` guard prevents husky from running in consumer environments (including when Pi installs your package). Without this, `husky` runs on every `npm install` and fails with a non-zero exit code in environments without a `.git` directory.
 
 **`pnpm.overrides`**: Ensures pi sub-packages resolve to the version bundled with pi-coding-agent, avoiding duplicate installations.
 

@@ -96,6 +96,8 @@ When adding a workspace dependency to a package.json:
 ## Pre-publish Checklist
 
 - [ ] `peerDependencies` version range is correct (>= minimum supported version).
+- [ ] `@mariozechner/pi-tui` is in `peerDependencies` (not `devDependencies`) if imported at runtime, with `optional: true` in `peerDependenciesMeta`.
+- [ ] `prepare` script uses `[ -d .git ] && husky || true`, not bare `husky`.
 - [ ] `description` is clear and concise.
 - [ ] `pi.extensions` paths are correct.
 - [ ] If in a monorepo: package doesn't depend on private workspace packages (`pnpm run check:public-deps` if available).
