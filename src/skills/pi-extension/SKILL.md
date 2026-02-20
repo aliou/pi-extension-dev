@@ -52,7 +52,7 @@ import { truncateHead, highlightCode, getLanguageFromPath, DynamicBorder, Border
 
 | File | Content |
 |---|---|
-| `references/structure.md` | Project layout, package.json, tsconfig, entry point, API key pattern, imports |
+| `references/structure.md` | Project layout, package.json, tsconfig, biome.json, config.ts, entry point patterns (including acceptable exceptions), API key pattern, imports |
 | `references/tools.md` | Tool registration, execute signature, parameters, streaming, rendering, naming, renderCall/renderResult UI guidelines |
 | `references/hooks.md` | Events, blocking/cancelling, input transformation, system prompt modification, bash spawn hooks (command rewriting) |
 | `references/commands.md` | Command registration, three-tier pattern, component extraction |
@@ -95,6 +95,8 @@ When implementing, look at these existing extensions for patterns:
 11. **Check existing components**: Before creating a new TUI component, check if `pi-tui` or `pi-coding-agent` already exports one that fits.
 12. **Forward abort signals**: Always pass `signal` through to `fetch()`, child processes, and API client methods. A tool that ignores its signal prevents cancellation from reaching the underlying operation. Never prefix with `_signal` unless the tool truly has no async work to cancel.
 13. **Never use `homedir()` for pi paths**: Use the SDK helpers from `@mariozechner/pi-coding-agent` instead. They respect the `PI_CODING_AGENT_DIR` env var which is used for testing and custom setups. Key functions: `getAgentDir()`, `getSettingsPath()`, `getSessionsDir()`, `getPromptsDir()`, `getToolsDir()`, `getCustomThemesDir()`, `getModelsPath()`, `getAuthPath()`, `getBinDir()`, `getDebugLogPath()`. All exported from the main package entry point.
+14. **Config uses the interface pattern**: `config.ts` defines two TypeScript interfaces (`RawConfig` with all fields optional, `ResolvedConfig` with all fields required) and a `ConfigLoader<Raw, Resolved>` instance. Do not use TypeBox schemas for config types.
+15. **Entry point deviations must be documented**: The standard entry point pattern is load config → check `enabled` → register. Deviations (no config, API-key-first ordering, no `enabled` toggle) are acceptable when justified, but must be noted in `AGENTS.md`.
 
 ## Checklist
 
@@ -118,3 +120,5 @@ Before considering an extension complete:
 - [ ] README documents tools, commands, env vars.
 - [ ] `@mariozechner/pi-tui` (and any other Pi-provided package) is in `peerDependencies` with `optional: true` if imported at runtime, not just `devDependencies`.
 - [ ] `prepare` script is `"[ -d .git ] && husky || true"`, not bare `"husky"`.
+- [ ] `config.ts` uses `ConfigLoader<Raw, Resolved>` with TypeScript interfaces, not TypeBox schemas.
+- [ ] If deviating from the standard entry point pattern (load-config → check-enabled → register), the reason is documented in `AGENTS.md`.

@@ -23,7 +23,8 @@ my-extension/
       my-helper.ts
   package.json
   tsconfig.json
-  biome.json               # Linting/formatting (optional)
+  biome.json               # Linting/formatting
+  shell.nix                # Nix dev environment
   .changeset/
     config.json            # Changeset config for versioning
   README.md
@@ -35,7 +36,7 @@ Not every extension needs every directory. A simple extension with one tool migh
 
 - **`index.ts` and `config.ts`** stay at root. These are the two core files every non-trivial extension has.
 - **Tools, commands, components, providers, hooks** each get their own directory. One file per tool/command/component.
-- **Config types live in `config.ts`**, not a separate `types.ts` or `config-schema.ts`. The config file exports both the types (user-facing schema, resolved schema) and the config loader instance.
+- **Config types live in `config.ts`**, not a separate `types.ts` or `config-schema.ts`. The config file exports both the types (raw and resolved) and the config loader instance.
 - **Utility/helper files** go in `utils/`. This includes pattern matching, shell parsing, event helpers, migrations, etc. Anything that is not a tool, command, component, provider, or hook.
 - **No separate `types.ts`** unless the extension has shared types unrelated to config (rare). Config types are the most common shared types, and they belong in `config.ts`.
 
@@ -48,6 +49,16 @@ Not every extension needs every directory. A simple extension with one tool migh
   "description": "Description of the extension",
   "type": "module",
   "license": "MIT",
+  "private": false,
+  "keywords": ["pi-package", "pi-extension", "pi"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/pi-my-extension"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": ["src", "README.md"],
   "pi": {
     "extensions": ["./src/index.ts"],
     "skills": ["./skills"],
@@ -64,23 +75,38 @@ Not every extension needs every directory. A simple extension with one tool migh
     "@mariozechner/pi-tui": { "optional": true }
   },
   "devDependencies": {
+    "@aliou/biome-plugins": "^0.3.0",
+    "@biomejs/biome": "^2.0.0",
+    "@changesets/cli": "^2.27.0",
     "@mariozechner/pi-coding-agent": "CURRENT_VERSION",
     "@mariozechner/pi-tui": "CURRENT_VERSION",
+    "@types/node": "^25.0.0",
+    "husky": "^9.0.0",
     "typescript": "^5.8.0"
   },
   "scripts": {
-    "prepare": "[ -d .git ] && husky || true"
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome check --write",
+    "check:lockfile": "pnpm install --frozen-lockfile --ignore-scripts",
+    "prepare": "[ -d .git ] && husky || true",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm changeset publish"
   },
   "pnpm": {
     "overrides": {
       "@mariozechner/pi-ai": "$@mariozechner/pi-coding-agent",
       "@mariozechner/pi-tui": "$@mariozechner/pi-coding-agent"
     }
-  }
+  },
+  "packageManager": "pnpm@10.26.1"
 }
 ```
 
-Replace `CURRENT_VERSION` with the actual installed version of pi (e.g., `0.51.2`).
+Replace `CURRENT_VERSION` with the actual installed version of pi (e.g., `0.52.7`).
+
+Only include `pi` sub-fields that are actually used. `skills`, `themes`, `prompts`, and `video` are optional.
 
 ### Fields
 
@@ -102,6 +128,8 @@ Replace `CURRENT_VERSION` with the actual installed version of pi (e.g., `0.51.2
 
 **`scripts.prepare`**: The `[ -d .git ] && husky || true` guard prevents husky from running in consumer environments (including when Pi installs your package). Without this, `husky` runs on every `npm install` and fails with a non-zero exit code in environments without a `.git` directory.
 
+**`scripts.check:lockfile`**: Verifies the lockfile is in sync with `package.json`. Run in CI to catch accidental lockfile drift.
+
 **`pnpm.overrides`**: Ensures pi sub-packages resolve to the version bundled with pi-coding-agent, avoiding duplicate installations.
 
 ## tsconfig.json
@@ -112,44 +140,162 @@ Replace `CURRENT_VERSION` with the actual installed version of pi (e.g., `0.51.2
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "esModuleInterop": true,
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "noEmit": true,
-    "declaration": false,
-    "jsx": "react-jsx",
-    "jsxImportSource": "@mariozechner/pi-tui"
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noEmit": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }
 ```
 
-Extensions are loaded directly by pi (no build step). `noEmit: true` means TypeScript is only used for type checking. The `jsx` settings are only needed if you use JSX in TUI components.
+Extensions are loaded directly by pi (no build step). `noEmit: true` means TypeScript is only used for type checking.
+
+**Do not add `jsx` or `jsxImportSource` settings.** Although `src/components/` exists, pi-tui components are not React components. They implement the `Component` interface from `@mariozechner/pi-tui` and render to plain strings. No JSX transpilation is involved.
+
+## biome.json
+
+All extensions use Biome for linting and formatting. Canonical config:
+
+```json
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.2/schema.json",
+  "plugins": [
+    "./node_modules/@aliou/biome-plugins/plugins/no-inline-imports.grit",
+    "./node_modules/@aliou/biome-plugins/plugins/no-js-import-extension.grit",
+    "./node_modules/@aliou/biome-plugins/plugins/no-emojis.grit"
+  ],
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["**/*.ts", "**/*.json"],
+    "ignoreUnknown": true
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2
+  }
+}
+```
+
+The `plugins` field requires Biome 2.x for GritQL plugin support. The `@aliou/biome-plugins` package has five plugins; three apply to pi extensions:
+
+- `no-inline-imports`: Disallows `await import()` and `require()` inside functions. All imports must be static.
+- `no-js-import-extension`: Disallows `.js` extensions in import paths (enforces the rule in Critical Rules).
+- `no-emojis`: Disallows emoji characters in code and strings.
+
+The other two (`no-interpolated-classname`, `phosphor-icon-suffix`) are specific to React and Phosphor icons and are not applicable.
+
+## config.ts
+
+Non-trivial extensions have a `config.ts` that defines the config schema, types, and loader instance. Use plain TypeScript interfaces with a raw/resolved two-type pattern. The raw type has all fields optional — only overrides are stored to disk. The resolved type has all fields required — defaults are merged in at load time.
+
+```typescript
+import { ConfigLoader } from "@aliou/pi-utils-settings";
+
+/**
+ * Raw config shape (what gets saved to disk).
+ * All fields optional -- only overrides are stored.
+ */
+export interface MyExtensionConfig {
+  enabled?: boolean;
+  myOption?: string;
+}
+
+/**
+ * Resolved config (defaults merged in).
+ * All fields required.
+ */
+export interface ResolvedMyExtensionConfig {
+  enabled: boolean;
+  myOption: string;
+}
+
+const DEFAULTS: ResolvedMyExtensionConfig = {
+  enabled: true,
+  myOption: "default-value",
+};
+
+/**
+ * Config loader instance.
+ * Config is stored at ~/.pi/agent/extensions/<name>.json
+ */
+export const configLoader = new ConfigLoader<
+  MyExtensionConfig,
+  ResolvedMyExtensionConfig
+>("my-extension", DEFAULTS);
+```
+
+The name passed to `ConfigLoader` determines the filename: `"my-extension"` → `~/.pi/agent/extensions/my-extension.json`.
+
+For extensions with migrations or multi-scope config (global + local + in-memory), pass an options object:
+
+```typescript
+export const configLoader = new ConfigLoader<MyExtensionConfig, ResolvedMyExtensionConfig>(
+  "my-extension",
+  DEFAULTS,
+  {
+    scopes: ["global", "local", "memory"],
+    migrations: [...],
+  },
+);
+```
 
 ## Entry Point (src/index.ts)
 
 The entry point is a default export function that receives the `ExtensionAPI` object.
 
+### Standard Pattern
+
 ```typescript
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { configLoader } from "./config";
+import { registerCommands } from "./commands";
+import { registerHooks } from "./hooks";
+import { registerTools } from "./tools";
 
-export default function (pi: ExtensionAPI) {
-  // Register tools, commands, providers, hooks, etc.
-}
-```
-
-If you need to await something at load time (e.g., checking an API subscription), use an async entry point:
-
-```typescript
 export default async function (pi: ExtensionAPI) {
-  const isSubscribed = await checkSubscription();
-  if (isSubscribed) {
-    pi.registerTool(myTool);
-  }
+  await configLoader.load();
+  const config = configLoader.getConfig();
+  if (!config.enabled) return;
+
+  registerTools(pi);
+  registerCommands(pi);
+  registerHooks(pi);
 }
 ```
 
-Prefer sync unless you genuinely need to await during registration.
+### Acceptable Exceptions
+
+Not all extensions follow the standard pattern exactly. These deviations are valid:
+
+**No config**: Extensions that use environment variables exclusively and have no user-configurable settings skip config loading entirely. The entry point reads the env var directly and gates registration on its presence.
+
+**API-key-first**: Extensions wrapping a third-party API check for the API key before loading config or registering anything. If the key is missing, notify the user and return early. Config loads after the key check. See the API Key Pattern section.
+
+**No `enabled` check**: Extensions that are always active by design omit the `enabled` field and the early-return check. The entry point still loads config for other settings. Document this decision in `AGENTS.md`.
+
+When deviating from the standard pattern, note the reason in the extension's `AGENTS.md`.
 
 ## API Key Pattern
 
